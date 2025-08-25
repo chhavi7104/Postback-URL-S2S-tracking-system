@@ -1,48 +1,53 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
+import styles from "../styles/Dashboard.module.css";
 
 const API = "http://localhost:3001"; // backend URL
 
 export default function Dashboard() {
   const router = useRouter();
-
-  // Get affiliate_id from query string, default to 1
-  const affiliate_id = router.query.affiliate_id || 1;
+  const [affiliateId, setAffiliateId] = useState(1);
 
   const [clicks, setClicks] = useState([]);
   const [conversions, setConversions] = useState([]);
 
+  // ✅ Fix: wait until router is ready
   useEffect(() => {
-    if (!affiliate_id) return;
+    if (!router.isReady) return;
+
+    const id = router.query.affiliate_id || 1;
+    setAffiliateId(id);
 
     // Load clicks
-    axios.get(`${API}/clicks?affiliate_id=${affiliate_id}`)
-      .then(res => setClicks(res.data))
-      .catch(err => console.error(err));
+    axios
+      .get(`${API}/clicks?affiliate_id=${id}`)
+      .then((res) => setClicks(res.data))
+      .catch((err) => console.error(err));
 
     // Load conversions
-    axios.get(`${API}/conversions?affiliate_id=${affiliate_id}`)
-      .then(res => setConversions(res.data))
-      .catch(err => console.error(err));
-  }, [affiliate_id]);
+    axios
+      .get(`${API}/conversions?affiliate_id=${id}`)
+      .then((res) => setConversions(res.data))
+      .catch((err) => console.error(err));
+  }, [router.isReady, router.query.affiliate_id]);
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>Affiliate {affiliate_id} Dashboard</h1>
+    <div className={styles.container}>
+      <h1>Affiliate {affiliateId} Dashboard</h1>
 
       {/* Postback URL */}
       <h2>Your Postback URL</h2>
-      <code style={{ display: "block", marginBottom: "1rem" }}>
-        {`${API}/postback?affiliate_id=${affiliate_id}&click_id={click_id}&amount={amount}&currency={currency}`}
+      <code className={styles.codeBlock}>
+        {`${API}/postback?affiliate_id=${affiliateId}&click_id={click_id}&amount={amount}&currency={currency}`}
       </code>
 
       {/* Clicks table */}
-      <h2 style={{ marginTop: "2rem" }}>Clicks</h2>
+      <h2>Clicks</h2>
       {clicks.length === 0 ? (
         <p>No clicks tracked yet.</p>
       ) : (
-        <table border="1" cellPadding="8">
+        <table className={styles.table}>
           <thead>
             <tr>
               <th>Click ID</th>
@@ -51,10 +56,12 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {clicks.map(click => (
+            {clicks.map((click) => (
               <tr key={click.id}>
                 <td>{click.click_id}</td>
-                <td>{click.campaign_name} (#{click.campaign_id})</td>
+                <td>
+                  {click.campaign_name} (#{click.campaign_id})
+                </td>
                 <td>{new Date(click.timestamp).toLocaleString()}</td>
               </tr>
             ))}
@@ -63,11 +70,11 @@ export default function Dashboard() {
       )}
 
       {/* Conversions table */}
-      <h2 style={{ marginTop: "2rem" }}>Conversions</h2>
+      <h2>Conversions</h2>
       {conversions.length === 0 ? (
         <p>No conversions tracked yet.</p>
       ) : (
-        <table border="1" cellPadding="8">
+        <table className={styles.table}>
           <thead>
             <tr>
               <th>Amount</th>
@@ -78,12 +85,14 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {conversions.map(conv => (
+            {conversions.map((conv) => (
               <tr key={conv.id}>
                 <td>{conv.amount}</td>
                 <td>{conv.currency}</td>
                 <td>{conv.click_id}</td>
-                <td>{conv.campaign_name} (#{conv.campaign_id})</td>
+                <td>
+                  {conv.campaign_name} (#{conv.campaign_id})
+                </td>
                 <td>{new Date(conv.timestamp).toLocaleString()}</td>
               </tr>
             ))}
